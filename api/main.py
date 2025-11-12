@@ -16,10 +16,20 @@ postgres_url = "postgresql://postgres:postgres@localhost:5666/db"
 engine = create_engine(postgres_url)
 
 
-def run_spider():
+def run_spider(spider_name: str):
     try:
+
+
+        spiders_list = [
+            "wecandoo",
+        ]
+
+        if spider_name not in spiders_list:
+            raise HTTPException(status_code=400, detail=f"Spider {spider_name} non trouvé")
+
+
         result = subprocess.run(
-            ["scrapy", "crawl", "wecandoo"],
+            ["scrapy", "crawl", spider_name],
             cwd="./scrapping",
             timeout=1800,
             capture_output=True,
@@ -28,9 +38,9 @@ def run_spider():
         if result.returncode != 0:
             raise HTTPException(status_code=500, detail=f"Erreur lors du lancement du crawl: {result.stderr}")
         else:
-            return {"status": "Crawl completed successfully"}
+            return {"status": "Crawl {spider_name} terminé avec succès"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erreur lors du lancement du crawl: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erreur lors du lancement du crawl {spider_name}: {str(e)}")
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
@@ -142,10 +152,10 @@ def delete_ateliers(session: Session = Depends(get_session)):
         session.rollback()
         raise HTTPException(status_code=500, detail=f"Erreur lors de la suppression des ateliers: {str(e)}")
 
-@router.post("/start-crawl")
-def start_crawl(background_tasks: BackgroundTasks):
+@router.post("/start-crawl/{spider_name}")
+def start_crawl(background_tasks: BackgroundTasks, spider_name: str):
     try:
-        background_tasks.add_task(run_spider)
+        background_tasks.add_task(run_spider, spider_name)
         return {"status": "Crawl started"}
 
     except Exception as e:
