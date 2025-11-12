@@ -7,10 +7,18 @@
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
-BOT_NAME = "tutorial"
+BOT_NAME = "scrapping"
 
-SPIDER_MODULES = ["tutorial.spiders"]
-NEWSPIDER_MODULE = "tutorial.spiders"
+SPIDER_MODULES = ["scrapping.spiders"]
+NEWSPIDER_MODULE = "scrapping.spiders"
+
+DOWNLOAD_HANDLERS = {
+    "http": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
+    "https": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
+}
+
+TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
+
 
 ADDONS = {}
 
@@ -25,6 +33,10 @@ ROBOTSTXT_OBEY = True
 #CONCURRENT_REQUESTS = 16
 CONCURRENT_REQUESTS_PER_DOMAIN = 1
 DOWNLOAD_DELAY = 1
+
+# Close spider settings
+CLOSESPIDER_TIMEOUT = 1800  # Force close after 30 minutes
+PLAYWRIGHT_ABORT_REQUEST = lambda req: req.resource_type in ["image", "stylesheet", "font", "media"]  # Skip unnecessary resources
 
 # Disable cookies (enabled by default)
 #COOKIES_ENABLED = False
@@ -59,8 +71,8 @@ DOWNLOAD_DELAY = 1
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    "tutorial.pipelines.TutorialPipeline": 300, 
-    "tutorial.pipelines.DatabasePipeline": 400,
+    "scrapping.pipelines.AtelierPipeline": 300, 
+    "scrapping.pipelines.DatabasePipeline": 400,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

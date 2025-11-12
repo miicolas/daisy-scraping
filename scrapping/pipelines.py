@@ -11,7 +11,7 @@ from urllib.parse import urljoin
 import requests
 
 
-class TutorialPipeline:
+class AtelierPipeline:
     def process_item(self, item, spider):
         adapter = ItemAdapter(item)
         
@@ -48,10 +48,9 @@ class TutorialPipeline:
 
 
 class DatabasePipeline:
-    """Pipeline pour collecter les nouveaux ateliers et les envoyer à l'API à la fin du scraping."""
     
     def __init__(self):
-        self.api_url = "http://localhost:8000"
+        self.api_url = "http://localhost:8000/api/v1"
         self.batch_url = f"{self.api_url}/ateliers/batch"
         self.urls_url = f"{self.api_url}/ateliers/urls"
         self.new_ateliers = []
@@ -62,20 +61,14 @@ class DatabasePipeline:
         self.existing_urls = set()
         
         try:
-            spider.logger.info("Chargement des URLs existantes depuis l'API...")
             response = requests.get(self.urls_url, timeout=10)
             if response.status_code == 200:
                 self.existing_urls = set(response.json())
-                spider.logger.info(f"{len(self.existing_urls)} URLs existantes chargées - les doublons seront ignorés")
             else:
                 spider.logger.warning(f"Impossible de charger les URLs existantes: {response.status_code}")
-        except requests.exceptions.ConnectionError:
-            spider.logger.warning("Impossible de se connecter à l'API pour charger les URLs existantes. Les doublons seront filtrés lors de l'envoi.")
         except Exception as e:
             spider.logger.warning(f"Erreur lors du chargement des URLs existantes: {str(e)}")
-        
-        spider.logger.info("DatabasePipeline initialisé - les ateliers seront envoyés à l'API à la fin du scraping")
-    
+            
     def process_item(self, item, spider):
         adapter = ItemAdapter(item)
         
@@ -90,11 +83,9 @@ class DatabasePipeline:
         url = adapter.get('url')
         
         if url in self.existing_urls:
-            spider.logger.debug(f"Atelier déjà en DB, ignoré: {url}")
             return item
         
         if any(a['url'] == url for a in self.new_ateliers):
-            spider.logger.debug(f"Atelier déjà dans la liste, ignoré: {url}")
             return item
         
         atelier_data = {
@@ -107,18 +98,14 @@ class DatabasePipeline:
         }
         
         self.new_ateliers.append(atelier_data)
-        spider.logger.debug(f"Atelier ajouté à la liste: {atelier_data['title']}")
         
         return item
     
     def close_spider(self, spider):
-        """Envoie tous les nouveaux ateliers à l'API via POST."""
         if not self.new_ateliers:
             spider.logger.info("Aucun nouvel atelier à envoyer")
             return
-        
-        spider.logger.info(f"Envoi de {len(self.new_ateliers)} nouveaux ateliers à l'API...")
-        
+                
         total_created = 0
         batch_size = 50
         

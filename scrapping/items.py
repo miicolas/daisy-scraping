@@ -6,7 +6,7 @@
 import scrapy
 
 
-class TutorialItem(scrapy.Item):
+class AtelierItem(scrapy.Item):
     title = scrapy.Field()
     url = scrapy.Field()
     price = scrapy.Field()
