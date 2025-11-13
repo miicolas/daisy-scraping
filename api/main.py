@@ -62,7 +62,7 @@ def get_ateliers(
         ateliers = session.exec(statement).all()
         return ateliers
     except Exception as e:
-        return HTTPException(status_code=500, detail=f"Erreur lors de la récupération des ateliers: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération des ateliers: {str(e)}")
 
 
 # Route pour récupérer toutes les URLs des ateliers
@@ -70,7 +70,7 @@ def get_ateliers(
 def get_atelier_urls(session: Session = Depends(get_session)):
     try:
         urls = session.exec(select(Atelier.url)).all()
-        return {"status": "success", "message": "URLs des ateliers récupérées avec succès", "urls": list(urls)}
+        return list(urls)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération des URLs des ateliers: {str(e)}")
 
@@ -122,12 +122,12 @@ def create_ateliers_batch(ateliers: List[AtelierCreate], session: Session = Depe
                     session.refresh(atelier)
                 except:
                     pass
-        
-        return {"status": "success", "message": "Tous les ateliers ont été créés avec succès", "ateliers": created_ateliers}
-    
+
+        return created_ateliers
+
     except Exception as e:
         session.rollback()
-        return HTTPException(status_code=500, detail=f"Erreur lors de la création des ateliers: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la création des ateliers: {str(e)}")
 
 # Route pour supprimer tous les ateliers
 @router.delete("/ateliers-all/")
@@ -139,7 +139,7 @@ def delete_ateliers(session: Session = Depends(get_session)):
         return {"status": "success", "message": "Tous les ateliers ont été supprimés avec succès"}
     except Exception as e:
         session.rollback()
-        return HTTPException(status_code=500, detail=f"Erreur lors de la suppression des ateliers: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la suppression des ateliers: {str(e)}")
 
 # Route pour démarrer un crawl
 @router.post("/start-crawl/{spider_name}")

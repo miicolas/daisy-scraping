@@ -13,7 +13,7 @@ from scrapping.settings import API_URL
 
 # Pipeline pour l'atelier
 class AtelierPipeline:
-    def process_item(self, item):
+    def process_item(self, item, spider):
         adapter = ItemAdapter(item)
         
         if adapter.get('title'):
