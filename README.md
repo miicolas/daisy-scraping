@@ -141,18 +141,9 @@ Récupérer un atelier spécifique
 curl http://localhost:8000/api/v1/ateliers/1
 ```
 
-### GET /api/v1/ateliers/urls
-
-Récupérer toutes les URLs des ateliers
-
-**Exemple:**
-```bash
-curl http://localhost:8000/api/v1/ateliers/urls
-```
-
 ### POST /api/v1/ateliers/batch
 
-Créer plusieurs ateliers en batch (utilisé par le pipeline Scrapy)
+Créer plusieurs ateliers en batch
 
 **Body:**
 ```json
@@ -270,50 +261,3 @@ psql -h localhost -p 5666 -U postgres -d db
 ```
 
 Password: `postgres`
-
-## Développement
-
-### Lancer les tests
-
-```bash
-# À implémenter
-pytest
-```
-
-### Ajouter un nouveau spider
-
-1. Créer un fichier dans `scrapping/spiders/`
-2. Définir la classe du spider héritant de `scrapy.Spider`
-3. Ajouter le nom du spider dans l'enum `Spiders` dans [api/main.py:15](api/main.py#L15)
-
-## Troubleshooting
-
-### Erreur de connexion à PostgreSQL
-
-Vérifiez que Docker est lancé :
-```bash
-docker-compose ps
-```
-
-### Playwright ne fonctionne pas
-
-Réinstallez les navigateurs :
-```bash
-playwright install
-```
-
-### Le scraping est bloqué
-
-Vérifiez le fichier `robots.txt` de Wecandoo et ajustez `ROBOTSTXT_OBEY` dans [scrapping/settings.py:30](scrapping/settings.py#L30)
-
-### Les ateliers ne s'enregistrent pas
-
-Vérifiez que l'API est démarrée et accessible depuis le spider. Le pipeline fait des requêtes HTTP vers `http://localhost:8000/api/v1/ateliers/batch`
-
-## Licence
-
-À définir
-
-## Auteurs
-
-Nicolas Becharat
