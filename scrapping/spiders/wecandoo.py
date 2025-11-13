@@ -3,7 +3,7 @@ from scrapy_playwright.page import PageMethod
 from scrapping.items import AtelierItem
 from scrapy.http import HtmlResponse
 
-
+# Spider pour Wecandoo
 class WecandooSpider(scrapy.Spider):
     name = "wecandoo"
     start_urls = ["https://wecandoo.fr/ateliers"]
@@ -15,6 +15,7 @@ class WecandooSpider(scrapy.Spider):
         self.scroll_attempts = int(kwargs.get('scroll_attempts', 5))
         self.seen_urls = set()
     
+    # Fonction pour démarrer les requêtes
     def start_requests(self):
         for url in self.start_urls:
             yield scrapy.Request(
@@ -29,10 +30,12 @@ class WecandooSpider(scrapy.Spider):
                 callback=self.parse,
             )
     
+    # Fonction pour parser la réponse
     async def parse(self, response):
         page = response.meta["playwright_page"]
 
         try:
+            # Scrolling pour charger toutes les ateliers
             previous_count = 0
             for scroll_count in range(self.scroll_attempts):
                 current_count = await page.locator("a[href*='/atelier/']").count()
@@ -51,9 +54,13 @@ class WecandooSpider(scrapy.Spider):
         finally:
             await page.close()
 
+        # Récupération du numéro de page
         page_num = response.meta.get('page_num', 1)
+
+        # Récupération des liens des ateliers
         atelier_links = rendered_response.css("a[href*='/atelier/']")
 
+        # Parsing des ateliers
         for atelier in atelier_links:
             url = atelier.css("::attr(href)").get()
             if not url:
@@ -68,6 +75,7 @@ class WecandooSpider(scrapy.Spider):
 
             spans = atelier.css("p.w-typo--caption span::text").getall()
 
+            # Création de l'item Atelier
             yield AtelierItem(
                 title=atelier.css("h3::text").get(),
                 url=url,
@@ -77,10 +85,12 @@ class WecandooSpider(scrapy.Spider):
                 location=spans[1] if len(spans) > 1 else None,
             )
 
+        # Parsing des pages suivantes
         if page_num < self.max_pages:
             for link in rendered_response.css("a[href*='page='], a[href*='/ateliers?']"):
                 next_url = link.css("::attr(href)").get()
                 if next_url:
+                    # Création de la requête pour la page suivante
                     yield scrapy.Request(
                         response.urljoin(next_url),
                         callback=self.parse,

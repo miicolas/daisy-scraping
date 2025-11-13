@@ -9,10 +9,11 @@ from itemadapter import ItemAdapter
 import re
 from urllib.parse import urljoin
 import requests
+from scrapping.settings import API_URL
 
-
+# Pipeline pour l'atelier
 class AtelierPipeline:
-    def process_item(self, item, spider):
+    def process_item(self, item):
         adapter = ItemAdapter(item)
         
         if adapter.get('title'):
@@ -47,15 +48,17 @@ class AtelierPipeline:
         return item
 
 
+# Pipeline pour la base de données
 class DatabasePipeline:
     
     def __init__(self):
-        self.api_url = "http://localhost:8000/api/v1"
+        self.api_url = API_URL
         self.batch_url = f"{self.api_url}/ateliers/batch"
         self.urls_url = f"{self.api_url}/ateliers/urls"
         self.new_ateliers = []
         self.existing_urls = set()
     
+    # Fonction pour ouvrir le spider
     def open_spider(self, spider):
         self.new_ateliers = []
         self.existing_urls = set()
@@ -69,6 +72,7 @@ class DatabasePipeline:
         except Exception as e:
             spider.logger.warning(f"Erreur lors du chargement des URLs existantes: {str(e)}")
             
+    # Fonction pour traiter l'item
     def process_item(self, item, spider):
         adapter = ItemAdapter(item)
         
@@ -101,6 +105,7 @@ class DatabasePipeline:
         
         return item
     
+    # Fonction pour fermer le spider
     def close_spider(self, spider):
         if not self.new_ateliers:
             spider.logger.info("Aucun nouvel atelier à envoyer")
@@ -109,6 +114,7 @@ class DatabasePipeline:
         total_created = 0
         batch_size = 50
         
+        # Envoi des ateliers par lot
         for i in range(0, len(self.new_ateliers), batch_size):
             batch = self.new_ateliers[i:i+batch_size]
             batch_num = i//batch_size + 1
@@ -127,8 +133,6 @@ class DatabasePipeline:
                 else:
                     spider.logger.error(f"Erreur lors de l'envoi du lot {batch_num}: {response.status_code} - {response.text[:200]}")
             
-            except requests.exceptions.ConnectionError:
-                spider.logger.error(f"Impossible de se connecter à l'API pour le lot {batch_num}. L'API est-elle démarrée?")
             except requests.exceptions.Timeout:
                 spider.logger.error(f"Timeout lors de l'envoi du lot {batch_num}")
             except Exception as e:

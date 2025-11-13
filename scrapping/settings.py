@@ -12,6 +12,8 @@ BOT_NAME = "scrapping"
 SPIDER_MODULES = ["scrapping.spiders"]
 NEWSPIDER_MODULE = "scrapping.spiders"
 
+API_URL = "http://localhost:8000/api/v1"
+
 DOWNLOAD_HANDLERS = {
     "http": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
     "https": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",

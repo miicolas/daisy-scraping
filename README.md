@@ -19,7 +19,8 @@ Le projet est composé de plusieurs services :
 daisy/
 ├── api/
 │   ├── models/
-│   │   └── atelier.py          # Modèles SQLModel
+│   │   └── atelier.py           # Modèles SQLModel
+│   │   └── crawl_log.py         # Modèles Crawl
 │   ├── main.py                  # Application FastAPI
 │   ├── tasks.py                 # Tâches Celery
 │   └── celery_config.py         # Configuration Celery

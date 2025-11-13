@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List
 
 from fastapi import Depends, FastAPI, HTTPException, Query, APIRouter, Path
 from sqlmodel import Session, SQLModel, create_engine, select, delete
@@ -12,6 +12,7 @@ from .celery_config import celery_app
 import enum
 from datetime import datetime
 
+# Enum pour les spiders
 class Spiders(str, enum.Enum):
     wecandoo = "wecandoo"
 
@@ -22,26 +23,30 @@ router = APIRouter(prefix="/api/v1")
 postgres_url = "postgresql://postgres:postgres@localhost:5666/db"
 engine = create_engine(postgres_url)
 
-
+# Création des tables dans la base de données
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
 
 
+# Fonction pour obtenir une session de la base de données
 def get_session():
     with Session(engine) as session:
         yield session
 
 
+# Événement de démarrage de l'application
 @app.on_event("startup")
 def on_startup():
     create_db_and_tables()
 
 
+# Route pour la racine de l'API
 @router.get("/")
 async def root():
     return {"message": "Hello World"}
 
 
+# Route pour récupérer tous les ateliers
 @router.get("/ateliers", response_model=List[Atelier])
 def get_ateliers(
     session: Session = Depends(get_session),
@@ -60,6 +65,7 @@ def get_ateliers(
         return HTTPException(status_code=500, detail=f"Erreur lors de la récupération des ateliers: {str(e)}")
 
 
+# Route pour récupérer toutes les URLs des ateliers
 @router.get("/ateliers/urls", response_model=List[str])
 def get_atelier_urls(session: Session = Depends(get_session)):
     try:
@@ -69,6 +75,7 @@ def get_atelier_urls(session: Session = Depends(get_session)):
         raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération des URLs des ateliers: {str(e)}")
 
 
+# Route pour récupérer un atelier par son ID
 @router.get("/ateliers/{atelier_id}", response_model=Atelier)
 def get_atelier(atelier_id: int, session: Session = Depends(get_session)):
     try:
@@ -80,6 +87,7 @@ def get_atelier(atelier_id: int, session: Session = Depends(get_session)):
         raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération de l'atelier: {str(e)}")
 
 
+# Route pour créer plusieurs ateliers en batch
 @router.post("/ateliers/batch", response_model=List[Atelier])
 def create_ateliers_batch(ateliers: List[AtelierCreate], session: Session = Depends(get_session)):
     if not ateliers:
@@ -121,6 +129,7 @@ def create_ateliers_batch(ateliers: List[AtelierCreate], session: Session = Depe
         session.rollback()
         return HTTPException(status_code=500, detail=f"Erreur lors de la création des ateliers: {str(e)}")
 
+# Route pour supprimer tous les ateliers
 @router.delete("/ateliers-all/")
 def delete_ateliers(session: Session = Depends(get_session)):
 
@@ -132,6 +141,7 @@ def delete_ateliers(session: Session = Depends(get_session)):
         session.rollback()
         return HTTPException(status_code=500, detail=f"Erreur lors de la suppression des ateliers: {str(e)}")
 
+# Route pour démarrer un crawl
 @router.post("/start-crawl/{spider_name}")
 def start_crawl(spider_name: Spiders = Path(...), session: Session = Depends(get_session)):
     try:
@@ -151,6 +161,7 @@ def start_crawl(spider_name: Spiders = Path(...), session: Session = Depends(get
         raise HTTPException(status_code=500, detail=f"Erreur lors du lancement du crawl: {error_msg}")
 
 
+# Route pour récupérer le statut d'un crawl par son ID
 @router.get("/start-crawl/status/{task_id}")
 def get_crawl_status(task_id: str, session: Session = Depends(get_session)):
     try:

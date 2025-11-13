@@ -4,6 +4,7 @@ from sqlmodel import Field, SQLModel
 from enum import Enum
 
 
+# Enum pour le statut du crawl
 class CrawlStatus(str, Enum):
     PENDING = "PENDING"
     STARTED = "STARTED"
@@ -12,6 +13,7 @@ class CrawlStatus(str, Enum):
     FAILED = "FAILED"
     TIMEOUT = "TIMEOUT"
 
+# Modèle pour le log du crawl
 class CrawlLog(SQLModel, table=True):
     id: Union[int, None] = Field(default=None, primary_key=True)
     task_id: str = Field(index=True)

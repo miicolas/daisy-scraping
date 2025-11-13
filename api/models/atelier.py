@@ -1,9 +1,9 @@
 from typing import Annotated, List, Union
 
-from fastapi import Depends, FastAPI, HTTPException, Query
-from sqlmodel import Field, Session, SQLModel, create_engine, select
+from sqlmodel import Field, SQLModel
 
 
+# Modèle pour l'atelier
 class Atelier(SQLModel, table=True):
     id: Union[int, None] = Field(default=None, primary_key=True)
     title: str = Field(index=True)
@@ -13,7 +13,7 @@ class Atelier(SQLModel, table=True):
     duration: Union[str, None] = Field(default=None, index=True)
     location: Union[str, None] = Field(default=None, index=True)
 
-
+# Modèle pour la création d'un atelier
 class AtelierCreate(SQLModel):
     title: str
     url: str

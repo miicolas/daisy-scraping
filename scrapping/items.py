@@ -5,11 +5,11 @@
 
 import scrapy
 
-
+# Item pour l'atelier
 class AtelierItem(scrapy.Item):
     title = scrapy.Field()
     url = scrapy.Field()
-    price = scrapy.Field()
     category = scrapy.Field()
+    price = scrapy.Field()
     location = scrapy.Field()
     duration = scrapy.Field()
