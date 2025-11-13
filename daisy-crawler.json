@@ -1,176 +1,382 @@
 {
-  "name": "My workflow",
   "nodes": [
     {
       "parameters": {
         "rule": {
           "interval": [
-            {}
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
           ]
         }
       },
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.2,
-      "position": [
-        -336,
-        0
-      ],
-      "id": "1276984d-6975-4652-b2f7-c1ac81000ac6",
+      "id": "37385f47-d362-4dd8-ae57-a4f4f0177687",
       "name": "Schedule Trigger",
-      "retryOnFail": true,
-      "notesInFlow": false,
-      "executeOnce": false,
-      "alwaysOutputData": true
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1776,
+        208
+      ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "http://host.docker.internal:8000/api/v1/start-crawl",
+        "url": "http://host.docker.internal:8000/api/v1/start-crawl/wecandoo",
         "options": {}
       },
+      "id": "596c49e4-083c-494c-8e02-eb9b9b3a50d9",
+      "name": "Start Crawl API",
       "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.3,
+      "typeVersion": 4.2,
       "position": [
-        -128,
-        0
-      ],
-      "id": "108796e6-a526-42dc-a6a0-aad0ed157878",
-      "name": "HTTP Request",
-      "alwaysOutputData": true,
-      "executeOnce": true,
-      "retryOnFail": true,
-      "waitBetweenTries": 5000
+        -1584,
+        208
+      ]
     },
     {
       "parameters": {
-        "operation": "appendOrUpdate",
-        "documentId": {
-          "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1ReSet6sdab9qAzcMoyLfofV_C7siRMUW9ayyIH2Tf_8/edit?gid=0#gid=0",
-          "mode": "url"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "gid=0",
-          "mode": "list",
-          "cachedResultName": "Feuille 1",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ReSet6sdab9qAzcMoyLfofV_C7siRMUW9ayyIH2Tf_8/edit#gid=0"
-        },
-        "columns": {
-          "mappingMode": "autoMapInputData",
-          "value": {},
-          "matchingColumns": [
-            "id"
-          ],
-          "schema": [
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
             {
-              "id": "id",
-              "displayName": "id",
-              "required": false,
-              "defaultMatch": true,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "date",
-              "displayName": "date",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
+              "id": "check-status-code",
+              "leftValue": "={{ $json.status}}",
+              "rightValue": "=started",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
             }
           ],
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": false
+          "combinator": "and"
         },
-        "options": {
-          "cellFormat": "USER_ENTERED",
-          "useAppend": true
-        }
+        "options": {}
       },
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.7,
+      "id": "34aea62e-c239-400a-9c35-3efb56f14ce9",
+      "name": "Check API Response",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
       "position": [
-        320,
-        0
+        -1376,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 30
+      },
+      "id": "4bb6be3d-ad54-46d5-8eb2-97f1338370ee",
+      "name": "Wait Before Check",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -1184,
+        112
       ],
-      "id": "74ca4f34-c900-4178-a8e4-4d4b5b1f8a7b",
-      "name": "Append or update row in sheet",
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "OCl1j67Uzz4jzBev",
-          "name": "Google Sheets account"
-        }
-      }
+      "webhookId": "cd3ff222-2b8f-400e-9558-b6afebb48271"
+    },
+    {
+      "parameters": {
+        "url": "=http://host.docker.internal:8000/api/v1/start-crawl/status/{{ $('Start Crawl API').item.json.task_id }}",
+        "options": {}
+      },
+      "id": "b0d56754-8c65-4a5c-9264-4d661499d21d",
+      "name": "Check Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -976,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "check-success",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "SUCCESS",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b6915b5b-dd66-402f-91d5-7b90a56d8a40",
+      "name": "Is Success?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -704,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "check-failed",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "FAILURE",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "check-failed-alt",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "FAILED",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "9a215330-6357-4884-bd1c-45d171c9f1aa",
+      "name": "Is Failed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -800,
+        32
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/api/v1/crawl-logs/error",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": []
+        },
+        "options": {}
+      },
+      "id": "7d380312-0ed1-48e7-8cfe-7e04ecd2a393",
+      "name": "Log Error to API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -512,
+        -304
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 60
+      },
+      "id": "3012c5e6-1b20-4a30-9df4-3f87c6d60634",
+      "name": "Wait and Retry",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -240,
+        160
+      ],
+      "webhookId": "7b3dcc08-f33d-4255-b185-0768d70ebb63"
     },
     {
       "parameters": {
         "assignments": {
           "assignments": [
             {
-              "id": "40e0d38d-43be-4e99-8172-8e2f73d0a369",
-              "name": "id",
-              "value": "={{ $itemIndex + 1 }}",
-              "type": "string"
-            },
-            {
-              "id": "8a5f964e-e796-4aa8-9520-60e584f2b6d1",
-              "name": "date",
-              "value": "={{new Date().toString()}}",
-              "type": "string"
+              "id": "success-log",
+              "name": "success",
+              "value": "={{ { \"task_id\": $('Start Crawl API').item.json.task_id, \"spider_name\": \"wecandoo\", \"status\": \"SUCCESS\", \"items_scraped\": $json.items_scraped || 0, \"timestamp\": $now.toISO() } }}",
+              "type": "object"
             }
           ]
         },
         "options": {}
       },
+      "id": "3ecf97f2-45d7-4ef8-839b-2ee2a9fe7075",
+      "name": "Success Log",
       "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
+      "typeVersion": 3.3,
       "position": [
-        128,
-        0
-      ],
-      "id": "61b3fa21-ad09-4739-b89e-e0ae7b231cd4",
-      "name": "Edit Fields"
+        -432,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "check-failed",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "PENDING",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "adfb6495-b587-4602-a146-4f32d81bd121",
+      "name": "Is Pending ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -512,
+        160
+      ]
     }
   ],
-  "pinData": {},
   "connections": {
     "Schedule Trigger": {
       "main": [
         [
           {
-            "node": "HTTP Request",
+            "node": "Start Crawl API",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "HTTP Request": {
+    "Start Crawl API": {
       "main": [
         [
           {
-            "node": "Edit Fields",
+            "node": "Check API Response",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Append or update row in sheet": {
-      "main": [
-        []
-      ]
-    },
-    "Edit Fields": {
+    "Check API Response": {
       "main": [
         [
           {
-            "node": "Append or update row in sheet",
+            "node": "Wait Before Check",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Error to API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Before Check": {
+      "main": [
+        [
+          {
+            "node": "Check Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Status": {
+      "main": [
+        [
+          {
+            "node": "Is Success?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Is Failed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Success?": {
+      "main": [
+        [
+          {
+            "node": "Success Log",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Failed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Failed?": {
+      "main": [
+        [
+          {
+            "node": "Log Error to API",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Pending ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Pending ?": {
+      "main": [
+        [
+          {
+            "node": "Wait Before Check",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait and Retry",
             "type": "main",
             "index": 0
           }
@@ -178,15 +384,9 @@
       ]
     }
   },
-  "active": false,
-  "settings": {
-    "executionOrder": "v1"
-  },
-  "versionId": "75485752-46df-4ca8-a274-1b04fa885dec",
+  "pinData": {},
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "e2217d3e4e120c6a3372a1890f03e232b35ad659d71f7a62501a4ee204a3e66d"
-  },
-  "id": "vQxsf4ic2AtGJ8zS",
-  "tags": []
+  }
 }

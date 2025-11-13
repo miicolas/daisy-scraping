@@ -1,0 +1,20 @@
+# FastAPI et serveur
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+
+# Base de données
+sqlmodel==0.0.22
+psycopg2-binary==2.9.10
+
+# Scrapy et web scraping
+scrapy==2.12.0
+scrapy-playwright==0.0.41
+playwright==1.49.1
+itemadapter==0.9.0
+
+# Celery pour les tâches asynchrones
+celery==5.4.0
+redis==5.2.0
+
+# HTTP requests
+requests==2.32.3

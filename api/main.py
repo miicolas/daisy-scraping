@@ -1,12 +1,19 @@
-import subprocess
-import os
+from typing import List, Union
 
-from typing import List
-
-from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, APIRouter
+from fastapi import Depends, FastAPI, HTTPException, Query, APIRouter, Path
 from sqlmodel import Session, SQLModel, create_engine, select, delete
 
 from .models.atelier import Atelier, AtelierCreate
+from .models.crawl_log import CrawlLog, CrawlStatus
+
+from .tasks import run_scrapy_spider
+from .celery_config import celery_app
+
+import enum
+from datetime import datetime
+
+class Spiders(str, enum.Enum):
+    wecandoo = "wecandoo"
 
 
 app = FastAPI()
@@ -15,32 +22,6 @@ router = APIRouter(prefix="/api/v1")
 postgres_url = "postgresql://postgres:postgres@localhost:5666/db"
 engine = create_engine(postgres_url)
 
-
-def run_spider(spider_name: str):
-    try:
-
-
-        spiders_list = [
-            "wecandoo",
-        ]
-
-        if spider_name not in spiders_list:
-            raise HTTPException(status_code=400, detail=f"Spider {spider_name} non trouvé")
-
-
-        result = subprocess.run(
-            ["scrapy", "crawl", spider_name],
-            cwd="./scrapping",
-            timeout=1800,
-            capture_output=True,
-            text=True
-        )
-        if result.returncode != 0:
-            raise HTTPException(status_code=500, detail=f"Erreur lors du lancement du crawl: {result.stderr}")
-        else:
-            return {"status": "Crawl {spider_name} terminé avec succès"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erreur lors du lancement du crawl {spider_name}: {str(e)}")
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
@@ -70,23 +51,22 @@ def get_ateliers(
 ):
     statement = select(Atelier)
     try:
-    if category:
-        statement = statement.where(Atelier.category == category)
+        if category:
+            statement = statement.where(Atelier.category == category)
         statement = statement.offset(offset).limit(limit)
         ateliers = session.exec(statement).all()
         return ateliers
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération des ateliers: {str(e)}")
+        return HTTPException(status_code=500, detail=f"Erreur lors de la récupération des ateliers: {str(e)}")
 
 
 @router.get("/ateliers/urls", response_model=List[str])
 def get_atelier_urls(session: Session = Depends(get_session)):
     try:
         urls = session.exec(select(Atelier.url)).all()
-        return list(urls)
+        return {"status": "success", "message": "URLs des ateliers récupérées avec succès", "urls": list(urls)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération des URLs des ateliers: {str(e)}")
-    return list(urls)
 
 
 @router.get("/ateliers/{atelier_id}", response_model=Atelier)
@@ -135,30 +115,90 @@ def create_ateliers_batch(ateliers: List[AtelierCreate], session: Session = Depe
                 except:
                     pass
         
-        return created_ateliers
+        return {"status": "success", "message": "Tous les ateliers ont été créés avec succès", "ateliers": created_ateliers}
     
     except Exception as e:
         session.rollback()
-        raise HTTPException(status_code=500, detail=f"Erreur lors de la création des ateliers: {str(e)}")
+        return HTTPException(status_code=500, detail=f"Erreur lors de la création des ateliers: {str(e)}")
 
-@router.delete("/ateliers-all/", response_model=dict)
+@router.delete("/ateliers-all/")
 def delete_ateliers(session: Session = Depends(get_session)):
 
     try:
         session.exec(delete(Atelier))
         session.commit()
-        return {"message": "Tous les ateliers ont été supprimés"}
+        return {"status": "success", "message": "Tous les ateliers ont été supprimés avec succès"}
     except Exception as e:
         session.rollback()
-        raise HTTPException(status_code=500, detail=f"Erreur lors de la suppression des ateliers: {str(e)}")
+        return HTTPException(status_code=500, detail=f"Erreur lors de la suppression des ateliers: {str(e)}")
 
 @router.post("/start-crawl/{spider_name}")
-def start_crawl(background_tasks: BackgroundTasks, spider_name: str):
+def start_crawl(spider_name: Spiders = Path(...), session: Session = Depends(get_session)):
     try:
-        background_tasks.add_task(run_spider, spider_name)
-        return {"status": "Crawl started"}
-
+        result = run_scrapy_spider.delay(spider_name.value)
+        
+        crawl_log = CrawlLog(
+            task_id=result.id,
+            spider_name=spider_name.value,
+            status=CrawlStatus.PENDING.value
+        )
+        session.add(crawl_log)
+        session.commit()
+        
+        return {"task_id": result.id, "status": "started", "message": f"crawl {spider_name.value} démarré avec succès"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erreur lors de la démarrage du crawl: {str(e)}")
+        error_msg = str(e)
+        raise HTTPException(status_code=500, detail=f"Erreur lors du lancement du crawl: {error_msg}")
+
+
+@router.get("/start-crawl/status/{task_id}")
+def get_crawl_status(task_id: str, session: Session = Depends(get_session)):
+    try:
+        task = celery_app.AsyncResult(task_id)
+        
+        crawl_log = session.exec(select(CrawlLog).where(CrawlLog.task_id == task_id)).first()
+        if not crawl_log:
+            crawl_log = CrawlLog(
+                task_id=task_id,
+                spider_name="unknown",
+                status=task.state or "UNKNOWN"
+            )
+            session.add(crawl_log)
+        
+        celery_state = task.state or "UNKNOWN"
+        
+        if celery_state == "SUCCESS":
+            crawl_log.status = CrawlStatus.SUCCESS.value
+        elif celery_state == "FAILURE" or celery_state == "FAILED":
+            crawl_log.status = CrawlStatus.FAILED.value
+        elif celery_state == "PROGRESS":
+            crawl_log.status = CrawlStatus.PROGRESS.value
+        elif celery_state == "PENDING":
+            crawl_log.status = CrawlStatus.PENDING.value
+        elif celery_state == "STARTED":
+            crawl_log.status = CrawlStatus.STARTED.value
+        else:
+            crawl_log.status = celery_state
+        
+        crawl_log.updated_at = datetime.utcnow()
+        session.add(crawl_log)
+        session.commit()
+        session.refresh(crawl_log)
+        
+        return {
+            "task_id": task_id,
+            "celery_state": task.state,
+            "celery_info": task.info if task.info else None,
+            "status": crawl_log.status,
+            "error_message": crawl_log.error_message,
+            "items_scraped": crawl_log.items_scraped,
+            "created_at": crawl_log.created_at.isoformat() if crawl_log.created_at else None,
+            "completed_at": crawl_log.completed_at.isoformat() if crawl_log.completed_at else None
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors de la récupération du statut: {str(e)}")
+
+
+
 
 app.include_router(router)
