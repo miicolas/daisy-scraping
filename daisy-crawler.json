@@ -11,13 +11,13 @@
           ]
         }
       },
-      "id": "37385f47-d362-4dd8-ae57-a4f4f0177687",
+      "id": "021d3618-d28f-427f-a395-7f9138f6bdd4",
       "name": "Schedule Trigger",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
       "position": [
-        -1776,
-        208
+        -1040,
+        272
       ]
     },
     {
@@ -26,13 +26,13 @@
         "url": "http://host.docker.internal:8000/api/v1/start-crawl/wecandoo",
         "options": {}
       },
-      "id": "596c49e4-083c-494c-8e02-eb9b9b3a50d9",
+      "id": "5786dc51-55c6-4cb8-8f89-bab652a83caf",
       "name": "Start Crawl API",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -1584,
-        208
+        -848,
+        272
       ]
     },
     {
@@ -41,75 +41,13 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict",
-            "version": 1
+            "typeValidation": "strict"
           },
           "conditions": [
             {
               "id": "check-status-code",
-              "leftValue": "={{ $json.status}}",
-              "rightValue": "=started",
-              "operator": {
-                "type": "string",
-                "operation": "contains"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "34aea62e-c239-400a-9c35-3efb56f14ce9",
-      "name": "Check API Response",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2,
-      "position": [
-        -1376,
-        208
-      ]
-    },
-    {
-      "parameters": {
-        "amount": 30
-      },
-      "id": "4bb6be3d-ad54-46d5-8eb2-97f1338370ee",
-      "name": "Wait Before Check",
-      "type": "n8n-nodes-base.wait",
-      "typeVersion": 1.1,
-      "position": [
-        -1184,
-        112
-      ],
-      "webhookId": "cd3ff222-2b8f-400e-9558-b6afebb48271"
-    },
-    {
-      "parameters": {
-        "url": "=http://host.docker.internal:8000/api/v1/start-crawl/status/{{ $('Start Crawl API').item.json.task_id }}",
-        "options": {}
-      },
-      "id": "b0d56754-8c65-4a5c-9264-4d661499d21d",
-      "name": "Check Status",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        -976,
-        112
-      ]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 1
-          },
-          "conditions": [
-            {
-              "id": "check-success",
               "leftValue": "={{ $json.status }}",
-              "rightValue": "SUCCESS",
+              "rightValue": "started",
               "operator": {
                 "type": "string",
                 "operation": "equals"
@@ -120,13 +58,41 @@
         },
         "options": {}
       },
-      "id": "b6915b5b-dd66-402f-91d5-7b90a56d8a40",
-      "name": "Is Success?",
+      "id": "d313c221-e6df-4083-9c0f-91c777984c23",
+      "name": "Check API Response",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -704,
-        352
+        -640,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "id": "d7d1f115-2294-475b-81c0-1f3ef4856c58",
+      "name": "Wait Before Check",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -448,
+        176
+      ],
+      "webhookId": "cd3ff222-2b8f-400e-9558-b6afebb48271"
+    },
+    {
+      "parameters": {
+        "url": "=http://host.docker.internal:8000/api/v1/start-crawl/status/{{ $('Start Crawl API').item.json.task_id }}",
+        "options": {}
+      },
+      "id": "44e9b0c4-f6b1-4bf9-9668-7aefd540151c",
+      "name": "Check Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -240,
+        176
       ]
     },
     {
@@ -162,69 +128,13 @@
         },
         "options": {}
       },
-      "id": "9a215330-6357-4884-bd1c-45d171c9f1aa",
+      "id": "2c2097e2-70ac-4531-b25b-37cdd9b41611",
       "name": "Is Failed?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -800,
-        32
-      ]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "http://host.docker.internal:8000/api/v1/crawl-logs/error",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": []
-        },
-        "options": {}
-      },
-      "id": "7d380312-0ed1-48e7-8cfe-7e04ecd2a393",
-      "name": "Log Error to API",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        -512,
-        -304
-      ]
-    },
-    {
-      "parameters": {
-        "amount": 60
-      },
-      "id": "3012c5e6-1b20-4a30-9df4-3f87c6d60634",
-      "name": "Wait and Retry",
-      "type": "n8n-nodes-base.wait",
-      "typeVersion": 1.1,
-      "position": [
-        -240,
-        160
-      ],
-      "webhookId": "7b3dcc08-f33d-4255-b185-0768d70ebb63"
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "success-log",
-              "name": "success",
-              "value": "={{ { \"task_id\": $('Start Crawl API').item.json.task_id, \"spider_name\": \"wecandoo\", \"status\": \"SUCCESS\", \"items_scraped\": $json.items_scraped || 0, \"timestamp\": $now.toISO() } }}",
-              "type": "object"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "3ecf97f2-45d7-4ef8-839b-2ee2a9fe7075",
-      "name": "Success Log",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.3,
-      "position": [
-        -432,
-        352
+        -16,
+        176
       ]
     },
     {
@@ -233,14 +143,63 @@
           "options": {
             "caseSensitive": true,
             "leftValue": "",
-            "typeValidation": "strict",
-            "version": 1
+            "typeValidation": "strict"
           },
           "conditions": [
             {
-              "id": "check-failed",
+              "id": "check-success",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "SUCCESS",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "90d1cb19-a0f7-4334-b6cc-02a112a530af",
+      "name": "Is Success?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        208,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-pending",
               "leftValue": "={{ $json.status }}",
               "rightValue": "PENDING",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "check-progress",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "PROGRESS",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "check-started",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "STARTED",
               "operator": {
                 "type": "string",
                 "operation": "equals"
@@ -251,13 +210,100 @@
         },
         "options": {}
       },
-      "id": "adfb6495-b587-4602-a146-4f32d81bd121",
-      "name": "Is Pending ?",
+      "id": "a01a85ed-b847-435d-b9b6-e8f989840431",
+      "name": "Is Pending/Progress?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        -512,
-        160
+        432,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "success-log",
+              "name": "message",
+              "value": "=Crawl terminé avec succès! {{ $json.items_scraped }} items scrapés",
+              "type": "string"
+            },
+            {
+              "id": "task-id",
+              "name": "task_id",
+              "value": "={{ $('Start Crawl API').item.json.task_id }}",
+              "type": "string"
+            },
+            {
+              "id": "items",
+              "name": "items_scraped",
+              "value": "={{ $json.items_scraped || 0 }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "23503ebd-914a-458c-9e2a-9c52cd10a1b8",
+      "name": "Success Log",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        208,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "error-log",
+              "name": "message",
+              "value": "=Crawl échoué: {{ $json.error_message || 'Erreur inconnue' }}",
+              "type": "string"
+            },
+            {
+              "id": "task-id-error",
+              "name": "task_id",
+              "value": "={{ $('Start Crawl API').item.json.task_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3b6c414b-c1f2-4943-ad15-f2785fdd6cc8",
+      "name": "Error Log",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        -16,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "unknown-log",
+              "name": "message",
+              "value": "=Statut inconnu: {{ $json.status }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b9d3fb69-ba08-4210-920a-6db6093ff377",
+      "name": "Unknown Status Log",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        432,
+        16
       ]
     }
   ],
@@ -295,7 +341,7 @@
         ],
         [
           {
-            "node": "Log Error to API",
+            "node": "Error Log",
             "type": "main",
             "index": 0
           }
@@ -317,12 +363,25 @@
       "main": [
         [
           {
-            "node": "Is Success?",
+            "node": "Is Failed?",
             "type": "main",
             "index": 0
-          },
+          }
+        ]
+      ]
+    },
+    "Is Failed?": {
+      "main": [
+        [
           {
-            "node": "Is Failed?",
+            "node": "Error Log",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Success?",
             "type": "main",
             "index": 0
           }
@@ -340,32 +399,14 @@
         ],
         [
           {
-            "node": "Is Failed?",
+            "node": "Is Pending/Progress?",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Is Failed?": {
-      "main": [
-        [
-          {
-            "node": "Log Error to API",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Is Pending ?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Is Pending ?": {
+    "Is Pending/Progress?": {
       "main": [
         [
           {
@@ -376,7 +417,7 @@
         ],
         [
           {
-            "node": "Wait and Retry",
+            "node": "Unknown Status Log",
             "type": "main",
             "index": 0
           }
