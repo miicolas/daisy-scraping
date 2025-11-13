@@ -6,7 +6,7 @@ Système de scraping et d'API pour collecter et gérer les ateliers créatifs de
 
 ```bash
 # 1. Cloner et installer
-git clone <repository-url>
+git clone https://github.com/miicolas/daisy-scraping.git
 cd daisy-scraping
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
